@@ -12,27 +12,28 @@ namespace Tennis
 
         public TennisGame2(string player1Name, string player2Name)
         {
+            if (string.IsNullOrEmpty(player1Name) ||
+                string.IsNullOrEmpty(player2Name) ||
+                player1Name == player2Name)
+            {
+                throw new ArgumentException("Player names cannot be null, empty or equal");
+            }
+
+            currentScoreState = new EqualPointsState();
             player1 = new Player(player1Name);
             player2 = new Player(player2Name);
         }
 
         public string GetScore()
         {
-            HandleCurrentScoreState();
-
             return currentScoreState.GetScore(player1, player2);
         }
 
         public void WonPoint(string playerName)
         {
-            if (player1.Name == playerName)
-            {
-                player1.Score();
-            }
-            else
-            {
-                player2.Score();
-            }
+            CheckIfGameStillGoing();
+            PlayerScore(playerName);
+            HandleCurrentScoreState();
         }
 
         #region PrivateMethods
@@ -73,6 +74,30 @@ namespace Tennis
             else
             {
                 currentScoreState = new AdvantageState();
+            }
+        }
+
+        private void CheckIfGameStillGoing()
+        {
+            if (currentScoreState.GetType() == typeof(WinState))
+            {
+                throw new ArgumentException("A player has already won");
+            }
+        }
+
+        private void PlayerScore(string playerName)
+        {
+            if (player1.Name == playerName)
+            {
+                player1.Score();
+            }
+            else if (player2.Name == playerName)
+            {
+                player2.Score();
+            }
+            else
+            {
+                throw new ArgumentException("Incorrect player name");
             }
         }
 
