@@ -1,10 +1,12 @@
 using System;
 using Tennis.Domain;
+using Tennis.Domain.ScoreStates;
 
 namespace Tennis
 {
     public class TennisGame2 : ITennisGame
     {
+        private IScoreState currentScoreState;
         private readonly Player player1;
         private readonly Player player2;
 
@@ -16,26 +18,9 @@ namespace Tennis
 
         public string GetScore()
         {
-            if (player1.Points == player2.Points)
-            {
-                return player1.Points < Points.Forty ? $"{player1.Points}-All" : "Deuce";
-            }
+            HandleCurrentScoreState();
 
-            if (player1.Points > Points.Forty || player2.Points > Points.Forty)
-            {
-                var pointDifference = player1.Points - player2.Points;
-
-                if (Math.Abs(pointDifference) >= 2)
-                {
-                    return pointDifference > 0 ? $"Win for {player1.Name}" : $"Win for {player2.Name}";
-                }
-                else
-                {
-                    return pointDifference > 0 ? $"Advantage {player1.Name}" : $"Advantage {player2.Name}";
-                }
-            }
-
-            return $"{player1.Points}-{player2.Points}";
+            return currentScoreState.GetScore(player1, player2);
         }
 
         public void WonPoint(string playerName)
@@ -50,6 +35,48 @@ namespace Tennis
             }
         }
 
+        #region PrivateMethods
+
+        private void HandleCurrentScoreState()
+        {
+            if (PlayersHaveEqualPoints())
+            {
+                currentScoreState = new EqualPointsState();
+            }
+            else if (AnyPlayerReachedAboveForty())
+            {
+                HandleAdvantageOrWinState();
+            }
+            else
+            {
+                currentScoreState = new RegularState();
+            }
+        }
+
+        private bool PlayersHaveEqualPoints()
+        {
+            return player1.Points == player2.Points;
+        }
+
+        private bool AnyPlayerReachedAboveForty()
+        {
+            return player1.Points > Points.Forty || player2.Points > Points.Forty;
+        }
+
+        private void HandleAdvantageOrWinState()
+        {
+            var pointDifference = player1.Points - player2.Points;
+            if (Math.Abs(pointDifference) >= 2)
+            {
+                currentScoreState = new WinState();
+            }
+            else
+            {
+                currentScoreState = new AdvantageState();
+            }
+        }
+
+        #endregion
     }
 }
 
